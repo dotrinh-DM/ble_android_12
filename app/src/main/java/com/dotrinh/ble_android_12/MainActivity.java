@@ -26,6 +26,7 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -51,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
     public ArrayList<BluetoothDevice> dataArr = new ArrayList<>();
     RecyclerView.Adapter adapter;
     BluetoothAdapter bluetoothAdapter;
+    public boolean isStopScanning;
+    Context ctx;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         View view = mainBinding.getRoot();
         setContentView(view);
+        ctx = this;
 
         //setup
         String[] permissionArr;
@@ -164,6 +168,8 @@ public class MainActivity extends AppCompatActivity {
                 mainBinding.progressBar.setVisibility(View.INVISIBLE);
                 bluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCB);
                 connect(dataArr.get(getAdapterPosition()));
+                isStopScanning = true;
+                Toast.makeText(ctx, "View log...", Toast.LENGTH_LONG).show();
                 LogI("click stop: " + dataArr.get(getAdapterPosition()).getName() + " : " + dataArr.get(getAdapterPosition()).getAddress());
             }
         }
@@ -270,6 +276,10 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             try {
                 dataArr.clear();
+                if (isStopScanning) {
+                    stopRepeatingTask();
+                    adapter.notifyDataSetChanged();
+                }
             } finally {
                 // 100% guarantee that this always happens, even if your update method throws an exception
                 mHandler.postDelayed(mStatusChecker, mInterval);
