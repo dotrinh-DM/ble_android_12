@@ -22,6 +22,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -91,6 +92,10 @@ public class MainActivity extends AppCompatActivity {
         mainBinding.recycler.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         adapter = new ChildAdapter();
         mainBinding.recycler.setAdapter(adapter);
+
+        //timer to clear list
+        mHandler = new Handler();
+        startRepeatingTask();
     }
 
     void startScan() {
@@ -256,4 +261,33 @@ public class MainActivity extends AppCompatActivity {
             LogI("onCharacteristicChanged");
         }
     };
+
+    //timer to clear
+    private int mInterval = 9000; // 9 seconds by default, can be changed later
+    private Handler mHandler;
+    Runnable mStatusChecker = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                dataArr.clear();
+            } finally {
+                // 100% guarantee that this always happens, even if your update method throws an exception
+                mHandler.postDelayed(mStatusChecker, mInterval);
+            }
+        }
+    };
+
+    void startRepeatingTask() {
+        mStatusChecker.run();
+    }
+
+    void stopRepeatingTask() {
+        mHandler.removeCallbacks(mStatusChecker);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopRepeatingTask();
+    }
 }
