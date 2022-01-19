@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,6 +31,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -50,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding mainBinding;
     public ArrayList<BluetoothDevice> dataArr = new ArrayList<>();
-    RecyclerView.Adapter adapter;
+    ChildAdapter adapter;
     BluetoothAdapter bluetoothAdapter;
     public boolean isStopScanning;
     Context ctx;
@@ -62,8 +64,33 @@ public class MainActivity extends AppCompatActivity {
         View view = mainBinding.getRoot();
         setContentView(view);
         ctx = this;
+        // Permission List
+        if (android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.R) { //Android 12 above
+            boolean permissionLocation = (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) &&
+                    (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) &&
+                    (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) &&
+                    (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED);
+            if (permissionLocation) {
+                LogI("don't check app gps runtime, scan now"); //this is a bug of Dexter
+                startScan();
+            } else {
+                DexterCheck();
+            }
+        } else {
+            DexterCheck();
+        }
 
-        //setup
+        //adapter
+        mainBinding.recycler.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        adapter = new ChildAdapter();
+        mainBinding.recycler.setAdapter(adapter);
+
+        //timer to clear list
+        mHandler = new Handler();
+        startRepeatingTask();
+    }
+
+    void DexterCheck() {
         String[] permissionArr;
         if (android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.R) { //Android 12 above
             permissionArr = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN};
@@ -91,15 +118,6 @@ public class MainActivity extends AppCompatActivity {
                 token.continuePermissionRequest();//request tiep neu chua co quyen
             }
         }).check();
-
-        //adapter
-        mainBinding.recycler.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        adapter = new ChildAdapter();
-        mainBinding.recycler.setAdapter(adapter);
-
-        //timer to clear list
-        mHandler = new Handler();
-        startRepeatingTask();
     }
 
     void startScan() {
@@ -117,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
             if (deviceName == null) {
                 return;
             }
-            LogI("Found the device: " + deviceName + " - Add: " + device.getAddress());
+            LogI("da tim thay thiet bi: " + deviceName + " - Address: " + device.getAddress());
             if (!checkExist(device)) {
                 dataArr.add(device);
                 adapter.notifyDataSetChanged();
