@@ -286,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    //timer to clear
+    //timer to clear ble list
     private int mInterval = 9000; // 9 seconds by default, can be changed later
     private Handler mHandler;
     Runnable mStatusChecker = new Runnable() {
@@ -317,5 +317,6 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         stopRepeatingTask();
+        LogI("onDestroy");
     }
 }
