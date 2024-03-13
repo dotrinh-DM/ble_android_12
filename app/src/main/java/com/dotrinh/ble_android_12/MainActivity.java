@@ -24,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,10 +51,14 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";//default from Google
+    public final static UUID UUID_FFF1_CHARACTERISTIC = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"); //read characteristic from BLE device <- change this
+
     ActivityMainBinding mainBinding;
     public ArrayList<BluetoothDevice> dataArr = new ArrayList<>();
     ChildAdapter adapter;
     BluetoothAdapter bluetoothAdapter;
+    BluetoothGattService foundService = null;
     public boolean isStopScanning;
     Context ctx;
 
@@ -187,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
                 bluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCB);
                 connect(dataArr.get(getAdapterPosition()));
                 isStopScanning = true;
-                Toast.makeText(ctx, "View log...", Toast.LENGTH_LONG).show();
+                Toast.makeText(ctx, "View log in Android Studio...", Toast.LENGTH_LONG).show();
                 LogI("click stop: " + dataArr.get(getAdapterPosition()).getName() + " : " + dataArr.get(getAdapterPosition()).getAddress());
             }
         }
@@ -218,7 +223,6 @@ public class MainActivity extends AppCompatActivity {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 //DEVICE SERVICES
                 List<BluetoothGattService> gattServices = bluetoothGatt.getServices();
-                BluetoothGattService foundService = null;
                 for (BluetoothGattService gattServiceItem : gattServices) {
                     UUID uuid = gattServiceItem.getUuid();
                     LogI("UUID: " + uuid.toString());
@@ -228,7 +232,9 @@ public class MainActivity extends AppCompatActivity {
                     LogI("Ko thay service nao");
                     return;
                 } else {
-                    LogI("da tim thay: " + gattServices.size() + " services");
+                    LogI("-------------------------------- da tim thay: " + gattServices.size() + " services");
+                    //todo: set notify...
+                    regAutoNotiBLe(gatt);
                 }
             } else {
                 LogI("loi 1");
@@ -283,6 +289,27 @@ public class MainActivity extends AppCompatActivity {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             byte[] data = characteristic.getValue();
             LogI("onCharacteristicChanged");
+        }
+
+        public boolean regAutoNotiBLe(BluetoothGatt bluetoothGatt) {
+            BluetoothGattCharacteristic characteristic = foundService.getCharacteristic(UUID_FFF1_CHARACTERISTIC);
+            if (characteristic == null) {
+                LogI("UUID_FFF1_CHARACTERISTIC null!");
+                return false;
+            }
+
+            final int charaProp = characteristic.getProperties();
+            if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                bluetoothGatt.setCharacteristicNotification(characteristic, true);
+                if (UUID_FFF1_CHARACTERISTIC.equals(characteristic.getUuid())) { // Enable Notification for FFF1
+                    BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(CLIENT_CHARACTERISTIC_CONFIG));
+                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    bluetoothGatt.writeDescriptor(descriptor);
+                    LogI("auto noti ok");
+                }
+            }
+            return true;
         }
     };
 
