@@ -132,11 +132,7 @@ public class MainActivity extends AppCompatActivity {
     void startScan() {
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
-        if (hasPermission) {
-            bluetoothAdapter.getBluetoothLeScanner().startScan(mScanCB);
-        } else {
-            LogI("Ko co quyen");
-        }
+        bluetoothAdapter.getBluetoothLeScanner().startScan(mScanCB);
     }
 
     ScanCallback mScanCB = new ScanCallback() {
