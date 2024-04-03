@@ -24,6 +24,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.BLE_Android_12">
+        <meta-data android:name="org.altbeacon.beacon.android.scan_non_android_le_scan_when_screen_off" android:value="true"/>
+        <service android:name="org.altbeacon.beacon.service.BeaconService"/>
+        <service android:name="org.altbeacon.beacon.BeaconIntentProcessor"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">
