@@ -29,6 +29,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean isStopScanning;
     Context ctx;
     boolean hasPermission = false;
+    String filterName = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +99,19 @@ public class MainActivity extends AppCompatActivity {
         //timer to clear list
         mHandler = new Handler();
         startRepeatingTask();
+
+        //filter
+        Button filterBtn = findViewById(R.id.filterButton);
+        filterBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText editText = (EditText) findViewById(R.id.editTextText);
+                String filterText = editText.getText().toString();
+                filterName = filterText;
+                dataArr.clear();
+                adapter.notifyDataSetChanged();
+            }
+        });
     }
 
     void DexterCheck() {
@@ -145,10 +161,18 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             LogI("da tim thay thiet bi: " + deviceName + " - Address: " + device.getAddress());
-            if (!checkExist(device)) {
-                dataArr.add(device);
-                adapter.notifyDataSetChanged();
+            if (filterName.isEmpty()) { //any device
+                if (!checkExist(device)) {
+                    dataArr.add(device);
+                }
+            } else { //filter device
+                if (deviceName.toLowerCase().contains(filterName)) {
+                    if (!checkExist(device)) {
+                        dataArr.add(device);
+                    }
+                }
             }
+            adapter.notifyDataSetChanged();
         }
     };
 
